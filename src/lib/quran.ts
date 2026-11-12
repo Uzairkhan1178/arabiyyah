@@ -7,7 +7,7 @@ export type Word = { t: string; g?: string; tr?: string; s?: Seg[] };
 export type Ayah = { a: number; w: Word[]; en: string; ur: string; al?: boolean };
 export type Surah = { n: number; ar: string; tl: string; en: string; type: string; basmala: string | null; ayahs: Ayah[] };
 export type SurahMeta = { n: number; ar: string; tl: string; en: string; type: string; count: number; start: number };
-export type Lex = { id: string; lem: string; tag: string; kind: string; root: string | null; n: number; vf: string | null; gl: [string, number][]; refs: string[]; rank: number };
+export type Lex = { id: string; lem: string; tag: string; kind: string; root: string | null; n: number; vf: string | null; der?: 'ACT_PCPL' | 'PASS_PCPL' | 'VN' | null; gl: [string, number][]; refs: string[]; rank: number };
 
 const BASE = import.meta.env.BASE_URL;
 export let SURAHS: SurahMeta[] = [];

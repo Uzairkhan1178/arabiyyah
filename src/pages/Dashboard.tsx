@@ -75,7 +75,7 @@ export default function Dashboard() {
     <section style={{ marginTop: '1.4rem' }} className="grid g4">
       <Stat n={c.wordsRecognised} label="words recognised" sub={`≈ ${pct(c.tokenCoverage)} of running Quranic words`} />
       <Stat n={c.wordsRecalled} label="words recalled unaided" />
-      <Stat n={c.roots} label="roots recognised" sub="of about 1,650" />
+      <Stat n={c.rootsTested} label="root families secure" sub={`${c.roots} roots met through words`} />
       <Stat n={c.lessonsPassed} label="grammar structures passed" />
     </section>
   </Page>;

@@ -111,7 +111,7 @@ export function dailyPlan(): Segment[] {
   const lab = get('set/lab') || { s: 1, a: 1 }; const hh = hifzHealth();
   const st = (l?: Lesson) => (l ? `${lessonState(l.id).read ? 'Mastery check' : 'Lesson'} ${l.n}: ${l.title}` : 'All lessons passed — review drills');
   return [
-    { id: 'vocab', title: 'Vocabulary', detail: `${vDue} reviews due · ${newLeft} new words`, to: 'vocabulary', minutes: a.vocab, spent: spent('vocab'), done: done('vocab') },
+    { id: 'vocab', title: 'Vocabulary and roots', detail: `${vDue} reviews due · ${newLeft} new words · ${due('root').length} root families due`, to: 'vocabulary', minutes: a.vocab, spent: spent('vocab'), done: done('vocab') },
     { id: 'sarf', title: 'Ṣarf', detail: `${st(ss)}${gDue('sarf') ? ` · ${gDue('sarf')} concept reviews` : ''}`, to: 'sarf', minutes: a.sarf, spent: spent('sarf'), done: done('sarf') },
     { id: 'nahw', title: 'Naḥw', detail: `${st(ns)}${gDue('nahw') ? ` · ${gDue('nahw')} concept reviews` : ''}`, to: 'nahw', minutes: a.nahw, spent: spent('nahw'), done: done('nahw') },
     { id: 'lab', title: 'Quran listening & comprehension', detail: `Lab: ${lab.s}:${lab.a} · then a listening drill`, to: 'lab', minutes: a.lab, spent: spent('lab') + spent('listen'), done: done('lab'), note: notes.lab },
@@ -135,7 +135,11 @@ export function competencies() {
   const cover = recog.reduce((s, c) => s + (LEXMAP.get(c.id)?.n || 0), 0) / total;
   const lessonsPassed = LESSONS.filter((l) => lessonState(l.id).passed).length;
   return {
-    wordsRecognised: recog.length, wordsRecalled: recall.length, roots: roots.size, tokenCoverage: cover, lessonsPassed,
+    wordsRecognised: recog.length, wordsRecalled: recall.length, roots: roots.size, rootsTested: cards('root').filter((c) => stable(c)).length, tokenCoverage: cover, lessonsPassed,
+    rootSkill: acc(as30, pre('root.')),
+    seeing: acc(as30, (a) => ['vocab.rec', 'vocab.recall', 'vocab.ctx', 'lab.comp'].includes(a.tag || '')),
+    hearing: acc(as30, (a) => a.mod === 'listen' || a.tag === 'vocab.listen' || a.tag === 'root.ear'),
+    explaining: acc(as30, (a) => /^(nahw|sarf)\./.test(a.tag || '') || a.mod === 'lab'),
     vocab: vocabCounts(),
     listening: acc(as30, (a) => a.mod === 'listen' || a.tag === 'vocab.listen'),
     comprehension: acc(as30, pre('lab.')),

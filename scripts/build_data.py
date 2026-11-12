@@ -79,8 +79,10 @@ for c in chap:
                     kind = 'PN' if 'PN' in fs else ('ADJ' if 'ADJ' in fs else tag)
                     if tag == 'P': kind = fs[0]
                     lid = lem + '|' + tag
-                    L = lex.setdefault(lid, dict(id=lid, lem=lem, tag=tag, kind=collections.Counter(), root=root, n=0, gl=collections.Counter(), refs=[], vf=feat(feats, 'VF')))
+                    L = lex.setdefault(lid, dict(id=lid, lem=lem, tag=tag, kind=collections.Counter(), root=root, n=0, gl=collections.Counter(), refs=[], vf=feat(feats, 'VF'), der=collections.Counter()))
                     L['n'] += 1; L['kind'][kind] += 1
+                    for dk in ('ACT_PCPL', 'PASS_PCPL', 'VN'):
+                        if dk in fs: L['der'][dk] += 1
                     if g and g[0]: L['gl'][g[0]] += 1
                     L['refs'].append((PRIORITY.get(s, 9), s, a, i))
                     if root: roots[root]['n'] += 1; roots[root]['lemmas'].add(lid)
@@ -97,7 +99,7 @@ for c in chap:
 lexout = []
 for L in lex.values():
     refs = sorted(set(L['refs']))[:8]
-    lexout.append(dict(id=L['id'], lem=L['lem'], tag=L['tag'], kind=L['kind'].most_common(1)[0][0], root=L['root'], n=L['n'], vf=L['vf'],
+    lexout.append(dict(id=L['id'], lem=L['lem'], tag=L['tag'], kind=L['kind'].most_common(1)[0][0], root=L['root'], n=L['n'], vf=L['vf'], der=(L['der'].most_common(1)[0][0] if L['der'] and L['der'].most_common(1)[0][1] * 2 > L['n'] else None),
                        gl=[[g, k] for g, k in L['gl'].most_common(5)], refs=[f'{s}:{a}:{w}' for _, s, a, w in refs]))
 lexout.sort(key=lambda x: -x['n'])
 for i, L in enumerate(lexout): L['rank'] = i + 1

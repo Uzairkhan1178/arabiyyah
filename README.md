@@ -9,7 +9,8 @@ A local-first, installable web app (PWA) built for one student: reads vowelled A
 | Dashboard | Today's 60-minute plan, phase mastery, due reviews, weak spots, upcoming assessments |
 | My Curriculum | Roadmap A (Nov–Dec 2026) and Roadmap B (2027), lesson order, prerequisites, gates |
 | Quran Laboratory | Any ayah of the Quran: listen first, commit to an answer, then word-by-word root, form and case |
-| Vocabulary | 4,771 dictionary words by Quranic frequency, four kinds of test per word, root families |
+| Vocabulary | 4,771 dictionary words by Quranic frequency, four kinds of test per word |
+| Root recognition | 922 root families grouped by verb form and derived noun, each tested six ways with look-alike roots as wrong answers |
 | Ṣarf / Naḥw | 36 lessons (22 with full explanations), unlimited drills generated from corpus tags, mastery checks |
 | Listening | Words by ear, ayahs by ear, rebuilding an ayah, continuous listening with hidden text |
 | Ḥifẓ | Recall assessment, spaced revision, missing-word and next-ayah tests, mistake log, gated new ayahs |
@@ -26,10 +27,10 @@ Needs Node.js 20 or newer.
 ```bash
 npm install
 npm run dev        # development server
-npm test           # 57 logic tests
+npm test           # 75 logic tests
 npm run build      # production build in dist/
 npm run preview    # serve the production build on http://localhost:4173
-node scripts/e2e.mjs   # 55 browser checks (needs Google Chrome and a running preview)
+node scripts/e2e.mjs   # 61 browser checks (needs Google Chrome and a running preview)
 ```
 
 ## Put it online (GitHub Pages)
@@ -48,9 +49,11 @@ Free GitHub Pages needs a public repository. The code contains no personal data:
 
 After the first visit the app opens without a connection. Lessons, the full word list and Al-Fātiḥa, Al-Mulk and Ar-Raḥmān are stored at install; any other surah is stored after you open it once. Recitation streams unless you save a surah's audio in Settings → Offline.
 
-## Moving between devices
+## Sync and moving between devices
 
-Progress is stored per device. Settings → *Download backup* writes one JSON file; on the other device use *Restore (merge)*. Merge keeps the newer copy of every record. Take a backup at least weekly.
+Settings → *Sync across devices*: create one account (email and password), then sign in with it on every device. Progress is stored on each device first and copied to a private Firebase database (project `arabiyyah-12e89`); study never waits for the network. If the same item changes on two devices, the later change wins.
+
+Settings → *Download backup* still writes everything to one JSON file; *Restore (merge)* keeps the newer copy of every record. Take a backup now and then even with sync on.
 
 ## Documentation
 

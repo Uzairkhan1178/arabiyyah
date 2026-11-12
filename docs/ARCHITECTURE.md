@@ -50,6 +50,7 @@ Seven strands share one evidence store, so each feeds the others.
 | Strand | Unit | Evidence it produces |
 |---|---|---|
 | Vocabulary | Lemma, in frequency order | Four cards per word: recognition, recall, in context, by ear |
+| Root recognition | Root family (922 three-letter roots with 2+ words) | One card per root, rated from a six-question quiz: member, intruder, root of a word, meaning from root + pattern, by ear, spotting in an ayah |
 | Ṣarf | 16 lessons | Mastery check score; application card; tagged drill answers |
 | Naḥw | 20 lessons | Same |
 | Quran Lab | Ayah | Words known before reveal; structure answers; self-rating capped by objective answers; retest card |
@@ -114,7 +115,7 @@ One IndexedDB store, `items`, keyed by `<type>/<id>`. Every record carries `u` (
 | Key | Holds |
 |---|---|
 | `set/profile`, `set/settings`, `set/lab`, `set/reading`, `set/backup` | Student profile, settings, Lab pointer, reading stage, last backup |
-| `card/<type>\|<id>\|<dim>` | FSRS state. Types: `vocab`, `grammar`, `ayah`, `hifz`, `conv` |
+| `card/<type>\|<id>\|<dim>` | FSRS state. Types: `vocab`, `root`, `grammar`, `ayah`, `hifz`, `conv` |
 | `log/<time>-<n>` | One answer: module, kind, competence tag, correct, milliseconds, reference, item |
 | `day/<yyyy-mm-dd>` | Minutes per module; parts completed |
 | `lesson/<id>` | Read, attempts, best score, passed |
@@ -124,6 +125,18 @@ One IndexedDB store, `items`, keyed by `<type>/<id>`. Every record carries `u` (
 | `note/<id>`, `bm/<id>`, `report/<time>`, `readdone/<id>`, `offline/<id>` | Notes, bookmarks, error reports, finished passages, saved audio |
 
 Backups are a JSON dump of this store. The AI key is never written to a backup.
+
+### Sync
+
+`src/lib/sync.ts` is a small engine over a `Remote` interface (`pull(since)`, `push(docs)`); `src/lib/firebase.ts` implements it on Firestore (Lite SDK) with Firebase Auth email/password. Firebase is loaded lazily, only for a device that uses sync.
+
+- Every local write sets `_d` (changed since last upload). A delete leaves a tombstone (`_x`) so it can travel.
+- A sync pulls documents whose server timestamp is after the saved cursor (minus five minutes), applies them, then uploads everything marked `_d`.
+- Conflict rule: the record with the later edit time `u` wins. Day records merge instead: the larger minute count per module and the union of completed parts.
+- Answers are uploaded as one document per device per day (`logbundle/<day>|<device>`), not one per answer, to keep reads and writes low.
+- `set/settings` syncs except `aiKey`, `theme` and `scale`, which stay on each device. `sync/*` and `offline/*` never leave the device.
+- Cloud layout: `users/<uid>/items/<encoded key>` = `{ k, u, d (JSON or null), s (server time) }`. Rules (`firestore.rules`) allow a signed-in user to read and write only their own `users/<uid>/…`.
+- Sync runs at start, when the app is hidden or reopened, every two minutes while changes are waiting, and on "Sync now".
 
 ## 7. Source layout
 
@@ -136,7 +149,8 @@ src/lib/                  db, srs, quran (data + tag decoding), gen (exercise ge
 src/content/              lessons, vocabulary notes, passages, conversation, analyses, roadmap
 src/pages/                one file per section
 src/ui/                   router, audio, timer, quiz runner, shared pieces
-tests/logic.test.ts       57 tests
+tests/logic.test.ts       63 tests (data, generators, scheduling, backup, content, roots)
+tests/sync.test.ts        12 tests with two simulated devices
 ```
 
 ## 8. Risks

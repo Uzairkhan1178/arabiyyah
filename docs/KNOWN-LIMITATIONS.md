@@ -8,15 +8,16 @@ Live site: https://uzairkhan1178.github.io/arabiyyah/ (deployed 12 Nov 2026).
 |---|---|---|
 | Recitation playback on Android | Verified on the live site in desktop Chrome only (ayah 67:1 played in the Lab; one sample from each of the six reciters and the word audio loaded) | Play an ayah in the Lab and a word in the inspector on the tablet and phone |
 | Playing saved audio with no connection | Saving works on the live site (Al-Ikhlāṣ, four recordings stored and readable; offline copies come from EveryAyah because the streaming host refuses downloads). Playing them back in flight mode has not been tried | Settings → Offline → save one short surah, then play it in flight mode |
+| Sync against the real cloud database | The merge engine passes 12 tests with two simulated devices, and the live database refuses anyone who is not signed in. An actual sign-in and round trip needs an account, which only you can create | Create the account in Settings, study a little, sign in on a second device and check the progress arrives |
 | AI tutor | Needs a personal API key; not called during testing | Add a key in Settings, ask one question in a lesson |
 | Device Arabic voice (conversation, reading) | Depends on voices installed on each device | The app says so when no Arabic voice exists |
 | Installing on Android and Windows | The live site serves its manifest and an active service worker; the install step itself has not been done | Install from the browser menu on each device |
 
-Everything else listed in the README was exercised by the automated tests: 57 logic tests and 55 browser checks at desktop, tablet and phone sizes, including storage across reloads and real offline loading.
+Everything else listed in the README was exercised by the automated tests: 75 logic tests and 61 browser checks at desktop, tablet and phone sizes, including storage across reloads and real offline loading.
 
 ## Not built
 
-- **Automatic sync between devices.** Device change is by backup file. A sync service is the main candidate for the next stage.
+- **An Android APK.** Decided against for now: the installed web app updates itself, an APK would not.
 - **Written explanations for 14 lessons** (N13–N20, Ṣ11–Ṣ16). Their drills and mastery checks work; the explanations are added through the content guide.
 - **Full sentence-level iʿrāb for every ayah.** The data has word-level tags only. Eight ayahs have authored analyses; all others show rule-derived hints and link to the Quranic Arabic Corpus treebank.
 - **Pronoun-reference data.** The Lab teaches how to trace a pronoun and asks about attached pronouns, but which noun each pronoun refers to is not in the dataset.
@@ -24,6 +25,12 @@ Everything else listed in the README was exercised by the automated tests: 57 lo
 - **Dialect material** in the conversation track.
 - **Tajwīd rules.** Recitation is always from authentic recordings and complete text, but tajwīd is not taught.
 - **Pause marks** are absent from the Tanzil export used.
+
+## To tidy in Firebase
+
+- **Sign-ups are open.** Anyone who finds the site could create an account (they could reach only their own empty space, never your data). After you have created your account, switch off new sign-ups: Firebase console → Authentication → Settings → User actions → untick *Enable create (sign-up)*.
+- **A Google Analytics property was attached** when the project was created. The app does not load Analytics and sends it nothing. It can be removed under Project settings → Integrations.
+- Same-item edits on two devices before either syncs: the later edit wins and the earlier one is lost. For flashcard reviews this is rare and harmless.
 
 ## By design
 

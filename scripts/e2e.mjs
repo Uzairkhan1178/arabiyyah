@@ -40,6 +40,14 @@ await clickText('The main meaning'); ok('Lab records the ayah and schedules a re
 
 await goto('vocabulary'); await new Promise((r) => setTimeout(r, 500)); const v = await text(); ok('vocabulary session opens with a card or question', /of \d+/.test(v), v.match(/\d+ of \d+[^\n]*/)?.[0]); await shot('04-vocabulary-desktop');
 await goto('vocabulary/browse'); await page.type('input[aria-label="Search words"]', 'mercy'); await new Promise((r) => setTimeout(r, 300)); ok('word search finds entries by meaning', (await page.$$('.lrow')).length > 0);
+await goto('vocabulary/root/' + encodeURIComponent('علم')); await new Promise((r) => setTimeout(r, 600)); const rf = await text();
+ok('root page shows the ع ل م family grouped by form and derivation', /form ii/i.test(rf) && /Doer noun/i.test(rf) && /Done-to noun/i.test(rf) && /knowing/.test(rf), rf.match(/\d+× in the Quran · \d+ words/)?.[0]);
+await shot('12-root-family');
+await clickText('Test me on this family'); await new Promise((r) => setTimeout(r, 900)); ok('root quiz starts', /Question 1 of [4-6]/.test(await text()), (await text()).match(/Question 1 of \d/)?.[0]);
+await goto('vocabulary/roots'); await new Promise((r) => setTimeout(r, 500)); ok('roots tab lists families with a session button', /Root recognition/.test(await text()) && (await page.$$('.rootrow')).length >= 30);
+await goto('vocabulary/rootsession'); await new Promise((r) => setTimeout(r, 500)); ok('root session introduces a new family', /new root/.test(await text()) && /Studied — test me/.test(await text()));
+await goto('settings'); await new Promise((r) => setTimeout(r, 1500)); ok('settings shows the sync sign-in card', /Sync across devices/.test(await text()) && !!(await page.$('input[type=password][autocomplete=current-password]')));
+await goto('progress'); ok('progress shows the four tests of understanding', /Four tests of understanding/.test(await text()) && /See a root/.test(await text()));
 await goto('nahw/n1'); await new Promise((r) => setTimeout(r, 500)); const les = await text(); ok('lesson N1 shows explanation, Urdu bridge and verified examples', /Urdu bridge/i.test(les) && /Where Urdu speakers slip/i.test(les) && (await page.$$('.lesson .ayah')).length === 3); await shot('05-lesson-desktop');
 await goto('nahw/n2'); ok('prerequisite lock is enforced', /Locked/.test(await text()));
 await goto('nahw/n1/check'); await page.waitForSelector('.quiz'); ok('mastery check has 10 questions', /Question 1 of 10/.test(await text()));

@@ -9,6 +9,7 @@ import './styles.css';
 import { initDB, settings, useDB, storageOK } from './lib/db';
 import { initData } from './lib/quran';
 import { due } from './lib/srs';
+import { startSync } from './ui/sync';
 import { useRoute, Link, Ar } from './ui/core';
 import Dashboard from './pages/Dashboard';
 import Curriculum from './pages/Curriculum';
@@ -71,7 +72,7 @@ function App() {
 }
 function Boot() {
   const [st, set] = useState<'load' | 'ok' | string>('load');
-  useEffect(() => { Promise.all([initDB(), initData()]).then(() => set('ok')).catch((e) => set(String(e?.message || e))); }, []);
+  useEffect(() => { Promise.all([initDB(), initData()]).then(() => { startSync(); set('ok'); }).catch((e) => set(String(e?.message || e))); }, []);
   if (st === 'load') return <div className="boot"><div><h1>Arabiyyah</h1><p className="muted">Loading your study environment…</p></div></div>;
   if (st !== 'ok') return <div className="boot"><div><h1>Could not start</h1><p className="warn">{st}</p><p className="muted">The core word list could not be loaded. Open the app once with a connection so it can be stored for offline use.</p><button className="btn primary" onClick={() => location.reload()}>Try again</button></div></div>;
   return <App />;

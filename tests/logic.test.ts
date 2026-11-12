@@ -82,3 +82,26 @@ describe('authored content is wired to real data', () => {
   it('authored sentence analyses reference real word positions', () => { for (const [ref, an] of Object.entries(ANALYSES)) { const [s, a] = ref.split(':').map(Number); const ay = (J(`public/data/quran/${s}.json`) as Surah).ayahs[a - 1]; const used = an.parts.flatMap((p) => p.w); used.forEach((w) => expect(ay.w[w - 1], `${ref} word ${w}`).toBeTruthy()); expect(new Set(used).size, `${ref} covers each word once`).toBe(ay.w.length); } });
   it('pattern rule gives fa3iil for a sound root and nothing for a weak one', () => { expect(wazn('عَلِيم', 'علم')).toBe('فَعِيل'); expect(wazn('قالَ', 'قول')).toBeNull(); });
 });
+
+import { family, studyRoots, lookalikes, rootQuiz, category } from '../src/lib/roots';
+import { ROOT_NOTES } from '../src/content/roots';
+import * as Q from '../src/lib/quran';
+describe('root-recognition engine', () => {
+  beforeAll(() => { (Q as any).LEX.push(...lex); lex.forEach((l) => Q.LEXMAP.set(l.id, l)); Object.assign(Q.ROOTS, J('public/data/roots.json')); (Q as any).SURAHS.push(...meta.surahs); (globalThis as any).fetch = async (u: string) => ({ ok: true, json: async () => J('public' + String(u).slice(String(u).indexOf('/data/'))) }); });
+  it('the family of ع ل م holds the verified words from the brief, each in the right category', () => {
+    const fam = family('علم'); const by = (lem: string) => fam.find((m) => m.l.lem.normalize('NFC') === lem.normalize('NFC'));
+    expect(by('عَلِمَ')!.cat).toMatch(/Verb, Form I$/); expect(by('عَلَّمَ')!.cat).toMatch(/Form II$/); expect(fam.find((m) => m.l.vf === '5')!.cat).toMatch(/Form V$/); /* the Quran has only the present form of Form V, so the corpus lemma is يَتَعَلَّمُ */ expect(by('عِلْم')).toBeTruthy(); expect(by('عَلِيم')!.pattern).toBe('فَعِيل');
+    expect(by('مَعْلُوم')!.cat).toMatch(/Done-to noun/); expect(by('عالِم')!.cat).toMatch(/Doer noun/); fam.forEach((m) => { expect(m.l.root).toBe('علم'); expect(m.l.refs.length).toBeGreaterThan(0); });
+  });
+  it('every member of every study root carries a verified occurrence', () => { const rs = studyRoots(); expect(rs.length).toBe(922); for (const r of rs.slice(0, 200)) for (const m of family(r)) expect(m.l.refs[0], `${r} ${m.l.lem}`).toMatch(/^\d+:\d+:\d+$/); });
+  it('look-alike roots share letters with the target and never include it', () => { const a = lookalikes('علم', 6); expect(a).not.toContain('علم'); expect(a.filter((r) => [...r].filter((c) => 'علم'.includes(c)).length >= 2).length).toBeGreaterThanOrEqual(3); });
+  it('a root quiz has consistent keys, and its in-ayah question marks exactly the words of that root', async () => {
+    for (const root of ['علم', 'خلق', 'رحم', 'كتب', 'ملك']) for (let i = 0; i < 6; i++) { const qs = await rootQuiz(root); expect(qs.length).toBeGreaterThanOrEqual(4);
+      for (const q of qs) { expect(q.item).toBe(`root:${root}`); if (q.kind === 'mcq') { expect(q.answer).toBeGreaterThanOrEqual(0); expect(new Set(q.options).size).toBe(q.options!.length); }
+        if (q.tag === 'root.member') expect(Q.LEXMAP.get([...Q.LEXMAP.keys()].find((k) => k.startsWith(q.options![q.answer!] + '|'))!)!.root).toBe(root);
+        if (q.tag === 'root.odd') { const odd = lex.find((l) => l.lem === q.options![q.answer!] && l.root !== root); expect(odd).toBeTruthy(); q.options!.filter((_, k) => k !== q.answer).forEach((o) => expect(lex.some((l) => l.lem === o && l.root === root)).toBe(true)); }
+        if (q.tag === 'root.spot') { const [s, a] = q.ref!.split(':').map(Number); const ay = (J(`public/data/quran/${s}.json`) as Surah).ayahs[a - 1]; const truth = ay.w.map((w, k) => (stemOf(w)?.f.root === root ? k : -1)).filter((k) => k >= 0); expect(q.taps).toEqual(truth); } } }
+  });
+  it('authored root notes all point at real study roots', () => { const rs = new Set(studyRoots()); expect(Object.keys(ROOT_NOTES).filter((r) => !rs.has(r))).toEqual([]); });
+  it('categories cover verbs by form and the three derived nouns', () => { const cats = new Set(lex.map((l) => category(l)[0])); ['Verb, Form I', 'Verb, Form X', 'Verbal noun (the action itself)', 'Doer noun (the one who does it)', 'Done-to noun (the one it is done to)'].forEach((c) => expect(cats.has(c), c).toBe(true)); });
+});

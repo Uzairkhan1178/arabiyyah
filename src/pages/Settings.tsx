@@ -3,6 +3,8 @@ import { useDB, get, put, patch, del, list, settings, setSettings, exportAll, im
 import { RECITERS, PROVENANCE, SURAHS, ayahAudio, ayahAudioDownload, loadSurah } from '../lib/quran';
 import { Page, Flag } from '../ui/core';
 import { SurahSelect } from '../ui/hooks';
+import { SyncCard } from '../ui/sync';
+import { syncState } from '../lib/sync';
 
 const LABELS: Record<string, string> = { vocab: 'Quranic vocabulary', sarf: 'Ṣarf', nahw: 'Naḥw', lab: 'Quran listening and comprehension', hifz: 'Ḥifẓ and revision', conv: 'Conversation' };
 export default function Settings() {
@@ -38,10 +40,11 @@ export default function Settings() {
         <h3 style={{ marginTop: '1rem' }}>Offline</h3><p className="muted sm">Lessons, the word list and Al-Fātiḥa, Al-Mulk and Ar-Raḥmān are stored when the app is installed. Any other surah is kept after you open it once. Audio streams unless saved here.</p>
         <div className="row"><SurahSelect value={off} onChange={setOff} /><button className="btn" onClick={saveOffline}>Save text and audio offline</button></div>{prog && <p className="sm">{prog}</p>}
         {list('offline').length > 0 && <p className="muted sm">Saved: {list('offline').map((o) => `${SURAHS[o.s - 1].tl} (${RECITERS.find((r) => r.id === o.reciter)?.name.split(' ').pop()})`).join(', ')}</p>}</div>
+      <SyncCard />
       <div className="card"><h3>Backup and device change</h3><p className="muted sm">Everything is stored on this device only. A backup file holds all progress, notes and schedules. To move to another device, download a backup here and restore it there.{last ? ` Last backup: ${new Date(last).toLocaleDateString()}.` : ' No backup taken yet.'}</p>
         <div className="row"><button className="btn primary" onClick={backup}>Download backup</button><button className="btn" onClick={() => { file.current!.dataset.mode = 'merge'; file.current!.click(); }}>Restore (merge)</button><button className="btn danger" onClick={() => { file.current!.dataset.mode = 'replace'; file.current!.click(); }}>Restore (replace all)</button></div>
         <input ref={file} type="file" accept="application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) restore(f, (e.target.dataset.mode as any) || 'merge'); e.target.value = ''; }} />
-        {msg && <p className="sm" role="status">{msg}</p>}<p className="muted sm">Merge keeps whichever copy of each record is newer. Automatic cloud sync is not built yet.</p></div>
+        {msg && <p className="sm" role="status">{msg}</p>}<p className="muted sm">Merge keeps whichever copy of each record is newer. A backup file is still worth taking now and then, even with sync on.</p></div>
       <div className="card"><div className="row between"><h3>AI tutor (optional)</h3><Flag kind="ai" /></div><p className="muted sm">Lessons, drills, scheduling and assessments never use AI. With a key, a tutor box appears in lessons and the Lab for follow-up questions; its answers are always flagged. The key is stored on this device only and is left out of backups. Usage is billed to your own Anthropic API account.</p>
         <label>Anthropic API key<input type="password" value={s.aiKey} onChange={(e) => setSettings({ aiKey: e.target.value.trim() })} placeholder="sk-ant-…" autoComplete="off" /></label><label style={{ marginTop: '.5rem' }}>Model<input value={s.aiModel} onChange={(e) => setSettings({ aiModel: e.target.value.trim() || DEFAULTS.aiModel })} /></label></div>
       <div className="card"><h3>Error reports ({reports.filter((r) => r.open).length} open)</h3>{reports.length ? <><div className="tablewrap"><table><tbody>{reports.slice(0, 30).map((r) => <tr key={r.k}><td className="sm">{new Date(r.t).toLocaleDateString()}<br /><b>{r.where}</b></td><td className="sm">{r.text}</td><td><button className="link sm" onClick={() => (r.open ? patch(r.k, { open: false }) : del(r.k))}>{r.open ? 'resolve' : 'delete'}</button></td></tr>)}</tbody></table></div>
@@ -54,6 +57,6 @@ export default function Settings() {
       <dt>Translations</dt><dd>English: {PROVENANCE.translations?.en}. Urdu: {PROVENANCE.translations?.ur}.</dd>
       <dt>Recitation</dt><dd>Streamed from the Islamic Network audio CDN (alquran.cloud), EveryAyah.com and Quran.com word audio. Recordings belong to their reciters.</dd>
       <dt>Integrity check</dt><dd>{PROVENANCE.stats?.aligned_ayahs} of {PROVENANCE.stats?.ayahs} ayahs align word-for-word between the Tanzil text and the corpus; {PROVENANCE.stats?.form_match} of {PROVENANCE.stats?.form_total} words match letter-for-letter. Unaligned: {(PROVENANCE.misaligned || []).map((x: string) => x.split(' ')[0]).join(', ')} (grammar disabled there).</dd></dl></div>
-    <p style={{ marginTop: '1rem' }}><button className="btn danger sm" onClick={async () => { if (msg !== 'confirm-wipe') { setMsg('confirm-wipe'); return; } await wipeAll(); setMsg('All progress on this device was erased.'); }}>{msg === 'confirm-wipe' ? 'Press again to erase all progress on this device' : 'Erase all progress'}</button></p>
+    <p style={{ marginTop: '1rem' }}><button className="btn danger sm" onClick={async () => { if (msg !== 'confirm-wipe') { setMsg('confirm-wipe'); return; } const everywhere = !!syncState(); await wipeAll(everywhere); setMsg(everywhere ? 'All progress was erased. The erasure reaches your other devices at their next sync.' : 'All progress on this device was erased.'); }}>{msg === 'confirm-wipe' ? 'Press again to erase all progress on this device' : 'Erase all progress'}</button></p>
   </Page>;
 }

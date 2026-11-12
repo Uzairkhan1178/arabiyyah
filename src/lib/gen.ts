@@ -84,7 +84,7 @@ export function generate(names: GenName[], pool: Surah[], n: number): Q[] {
 
 // ---- vocabulary questions ------------------------------------------------------------------------
 import type { Lex } from './quran';
-export const cleanGloss = (g: string) => g.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+export const cleanGloss = (g: string) => g.replace(/\([^)]*\)|\[[^\]]*\]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(and|but|so|then|or|for|indeed,?|verily,?)\s+(?=\S)/i, '');
 export function lemmaMeaning(l: Lex, overlay?: { en?: string }): string { return overlay?.en || cleanGloss(l.gl[0]?.[0] || '') || '—'; }
 export function vocabRecQ(l: Lex, all: Lex[], meaning: (x: Lex) => string): Q {
   const near = all.filter((x) => x.id !== l.id && x.tag === l.tag && Math.abs(x.rank - l.rank) < 120 && meaning(x) !== meaning(l));

@@ -6,6 +6,7 @@ import { vocabRecQ, vocabCtxQ, vocabListenQ, type Q } from '../lib/gen';
 import { nextNewWords, introducedToday, vocabCounts, weakRoots } from '../lib/planner';
 import { noteOf, meaningOf, kindOf, wazn } from '../lib/vocab';
 import { norm } from '../lib/arabic';
+import { RootsTab, RootPage, RootSession } from './Roots';
 import { Page, Link, Ar, Ur, Flag, Quiz, AudioBtn, AudioError, AyahWords, Stat, useStudyTimer, Report, go } from '../ui/core';
 
 type Item = { kind: 'intro'; l: Lex } | { kind: 'card'; l: Lex; dim: Dim; retry?: boolean; known?: boolean };
@@ -14,7 +15,7 @@ function Family({ l }: { l: Lex }) {
   if (!l.root || !ROOTS[l.root]) return null;
   const fam = ROOTS[l.root].l.map((id) => LEXMAP.get(id)!).filter((x) => x && x.id !== l.id).slice(0, 8);
   if (!fam.length) return null;
-  return <div><div className="eyebrow">Same root {l.root.split('').join(' ')} · {ROOTS[l.root].n}× in the Quran</div>
+  return <div><div className="eyebrow"><Link to={`vocabulary/root/${encodeURIComponent(l.root)}`}>Root family {l.root.split('').join(' ')}</Link> · {ROOTS[l.root].n}× in the Quran</div>
     <div className="row">{fam.map((x) => <Link key={x.id} to={`vocabulary/word/${encodeURIComponent(x.id)}`} className="btn sm"><Ar>{x.lem}</Ar> <span className="muted sm">{meaningOf(x)}</span></Link>)}</div></div>;
 }
 function Examples({ l, max = 2 }: { l: Lex; max?: number }) {
@@ -116,23 +117,13 @@ function Browse() {
     {rows.length > n && <p><button className="btn" onClick={() => setN(n + 100)}>Show more</button></p>}
   </>;
 }
-function Roots() {
-  const weak = weakRoots(); const [n, setN] = useState(40);
-  const all = useMemo(() => Object.entries(ROOTS).sort((a, b) => b[1].n - a[1].n), []);
-  const fam = (root: string, ids: string[]) => <div className="row">{ids.slice(0, 10).map((id) => { const l = LEXMAP.get(id); return l ? <Link key={id} to={`vocabulary/word/${encodeURIComponent(id)}`} className="btn sm"><Ar>{l.lem}</Ar><span className="muted sm">{meaningOf(l)}</span></Link> : null; })}</div>;
-  return <>
-    {weak.length > 0 && <div className="card accent" style={{ marginBottom: '1rem' }}><h3>Root families you keep missing</h3><p className="muted sm">Three or more wrong answers in the last 30 days. Study the family together; these words are also scheduled sooner.</p>
-      {weak.slice(0, 5).map((w) => <div key={w.root} style={{ marginBottom: '.6rem' }}><b><Ar>{w.root.split('').join(' ')}</Ar></b> <span className="muted sm">{w.fails} misses</span>{fam(w.root, ROOTS[w.root]?.l || [])}</div>)}</div>}
-    <p className="muted sm">{all.length} roots, most frequent first. Learning a family together is usually faster than learning its words apart.</p>
-    <div className="list">{all.slice(0, n).map(([root, v]) => <div key={root} className="card flat"><div className="row between"><b><Ar size={1.2}>{root.split('').join(' ')}</Ar></b><span className="chip">{v.n}× · {v.l.length} words</span></div>{fam(root, v.l)}</div>)}</div>
-    {all.length > n && <p><button className="btn" onClick={() => setN(n + 60)}>Show more</button></p>}
-  </>;
-}
 export default function Vocabulary({ sub, id }: { sub?: string; id?: string }) {
   useDB(); const tab = sub || 'session'; const c = vocabCounts();
+  if (tab === 'root' && id) return <Page title="Root family" ar="الجَذْر" sub={<Link to="vocabulary/roots">← All roots</Link>}><RootPage key={id} root={id} /></Page>;
+  if (tab === 'rootsession') return <Page title="Root recognition" ar="الجُذُور" sub={<Link to="vocabulary/roots">← All roots</Link>}><RootSession /></Page>;
   if (tab === 'word' && id && LEXMAP.get(id)) return <Page title="Word" sub={<Link to="vocabulary/browse">← All words</Link>}><div style={{ maxWidth: 760 }}><WordCard l={LEXMAP.get(id)!} full /></div></Page>;
   return <Page title="Vocabulary" ar="المُفْرَدَات" sub={`${due('vocab').length} reviews due · ${c.introduced} introduced · ${c.mastered} mastered. Words are taught in order of Quranic frequency and tested four ways.`}>
     <div className="tabs">{[['session', 'Today’s session'], ['browse', 'All words'], ['roots', 'Root families']].map(([k, t]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => go(`vocabulary/${k}`)}>{t}</button>)}</div>
-    {tab === 'session' && <Session />}{tab === 'browse' && <Browse />}{tab === 'roots' && <Roots />}
+    {tab === 'session' && <Session />}{tab === 'browse' && <Browse />}{tab === 'roots' && <RootsTab />}
   </Page>;
 }

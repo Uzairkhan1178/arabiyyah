@@ -36,26 +36,46 @@ export async function initDB(name = 'arabiyyah') {
   bump();
 }
 
+// Sync bookkeeping lives on the record itself: _d = changed locally since the last upload,
+// _x = deleted (a tombstone, kept so the deletion can travel to other devices).
+export const LOCAL_ONLY = new Set(['sync', 'offline']);
 export function get<T = any>(k: string): (T & Rec) | undefined {
-  return byType.get(typeOf(k))?.get(k) as any;
+  const r = byType.get(typeOf(k))?.get(k) as any;
+  return r && !r._x ? r : undefined;
 }
 export function put(k: string, v: object): Rec {
-  const r = { ...v, k, u: Date.now() } as Rec;
+  const r = { ...v, k, u: Date.now(), _d: 1 } as Rec;
+  delete r._x;
   bucket(typeOf(k)).set(k, r);
   idb?.put('items', r).catch((e) => console.warn('write failed', e));
   bump();
   return r;
 }
+/** Store a record exactly as given (no timestamp or dirty-flag changes). Used by sync. */
+export function putRaw(r: Rec, quiet = false) {
+  bucket(typeOf(r.k)).set(r.k, r);
+  idb?.put('items', r).catch((e) => console.warn('write failed', e));
+  if (!quiet) bump();
+}
+export const rawGet = (k: string): Rec | undefined => byType.get(typeOf(k))?.get(k);
+export function rawAll(): Rec[] { const out: Rec[] = []; byType.forEach((b) => b.forEach((r) => out.push(r))); return out; }
+export const notify = () => bump();
+export function deviceId(): string {
+  let d = rawGet('sync/device');
+  if (!d) { d = { k: 'sync/device', u: Date.now(), id: Math.random().toString(36).slice(2, 10) }; putRaw(d, true); }
+  return d.id;
+}
 export function patch(k: string, v: object) {
   return put(k, { ...(get(k) || {}), ...v });
 }
 export function del(k: string) {
-  byType.get(typeOf(k))?.delete(k);
-  idb?.delete('items', k).catch(() => {});
+  if (!rawGet(k)) return;
+  if (LOCAL_ONLY.has(typeOf(k))) { byType.get(typeOf(k))?.delete(k); idb?.delete('items', k).catch(() => {}); }
+  else putRaw({ k, u: Date.now(), _x: 1, _d: 1 }, true);
   bump();
 }
 export function list<T = any>(type: string): (T & Rec)[] {
-  return [...(byType.get(type)?.values() || [])] as any;
+  return [...(byType.get(type)?.values() || [])].filter((r) => !r._x) as any;
 }
 export function subscribe(f: () => void) {
   subs.add(f);
@@ -95,7 +115,7 @@ export type Attempt = { t: number; mod: string; kind: string; tag?: string; ok: 
 let seq = 0;
 export function logAttempt(a: Omit<Attempt, 't'>) {
   const t = Date.now();
-  put(`log/${t}-${seq++ % 1000}`, { ...a, t });
+  put(`log/${t}-${seq++ % 1000}-${deviceId()}`, { ...a, t, dv: deviceId() });
 }
 export function attempts(sinceDays = 3650): Attempt[] {
   const since = Date.now() - sinceDays * 864e5;
@@ -121,9 +141,9 @@ export function markDone(seg: string, value: any = true) {
 // ---- backup / restore ---------------------------------------------------------------------------
 export function exportAll(): string {
   const items: Rec[] = [];
-  byType.forEach((b) => b.forEach((r) => { if (r.k !== 'set/settings' || true) items.push(r); }));
+  byType.forEach((b, t) => b.forEach((r) => { if (!r._x && !LOCAL_ONLY.has(t)) items.push(r); }));
   // The AI key is a secret: never write it into a backup file.
-  const clean = items.map((r) => (r.k === 'set/settings' ? { ...r, aiKey: '' } : r));
+  const clean = items.map(({ _d, ...r }) => (r.k === 'set/settings' ? { ...r, aiKey: '' } : r) as Rec);
   return JSON.stringify({ app: 'arabiyyah', format: 1, exportedAt: new Date().toISOString(), items: clean });
 }
 export async function importAll(json: string, mode: 'merge' | 'replace'): Promise<{ added: number; updated: number; kept: number }> {
@@ -139,11 +159,12 @@ export async function importAll(json: string, mode: 'merge' | 'replace'): Promis
   const tx = idb?.transaction('items', 'readwrite');
   for (const r of data.items as Rec[]) {
     if (!r || typeof r.k !== 'string' || !r.k.includes('/')) continue;
-    const cur = get(r.k);
+    if (LOCAL_ONLY.has(typeOf(r.k))) continue;
+    const cur = rawGet(r.k);
     if (!cur) res.added++;
     else if ((r.u || 0) > (cur.u || 0)) res.updated++;
     else { res.kept++; continue; }
-    const rec = r.k === 'set/settings' ? { ...r, aiKey: cur?.aiKey || '' } : r;
+    const rec = { ...(r.k === 'set/settings' ? { ...r, aiKey: cur?.aiKey || '' } : r), _d: 1 } as Rec;
     bucket(typeOf(r.k)).set(r.k, rec);
     tx?.store.put(rec);
   }
@@ -151,7 +172,9 @@ export async function importAll(json: string, mode: 'merge' | 'replace'): Promis
   bump();
   return res;
 }
-export async function wipeAll() {
+/** Erase progress. With propagate=true every record becomes a tombstone so the erasure reaches synced devices too. */
+export async function wipeAll(propagate = false) {
+  if (propagate) { for (const r of rawAll()) if (!LOCAL_ONLY.has(typeOf(r.k)) && !r._x) putRaw({ k: r.k, u: Date.now(), _x: 1, _d: 1 }, true); bump(); return; }
   byType.clear();
   await idb?.clear('items');
   bump();
