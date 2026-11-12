@@ -1,14 +1,16 @@
 # Known limitations
 
-## Not verified in the build environment
+## Not yet verified
+
+Live site: https://uzairkhan1178.github.io/arabiyyah/ (deployed 12 Nov 2026).
 
 | Item | Why | What to check on first use |
 |---|---|---|
-| Recitation playback inside the app | The build sandbox cannot reach the audio hosts. Separately, all six reciters' ayah recordings and the word audio were loaded successfully in a desktop browser (one sample ayah each), so the addresses and formats are right | Play an ayah in the Lab and a word in the inspector on each device |
-| Saving audio for offline use | The streaming host (Islamic Network) refuses cross-origin downloads, so offline copies of the same reciters come from EveryAyah, where downloads were confirmed to work. The save-then-play-offline round trip has not been run on a hosted build | Settings → Offline → save one short surah, then play it in flight mode |
+| Recitation playback on Android | Verified on the live site in desktop Chrome only (ayah 67:1 played in the Lab; one sample from each of the six reciters and the word audio loaded) | Play an ayah in the Lab and a word in the inspector on the tablet and phone |
+| Playing saved audio with no connection | Saving works on the live site (Al-Ikhlāṣ, four recordings stored and readable; offline copies come from EveryAyah because the streaming host refuses downloads). Playing them back in flight mode has not been tried | Settings → Offline → save one short surah, then play it in flight mode |
 | AI tutor | Needs a personal API key; not called during testing | Add a key in Settings, ask one question in a lesson |
 | Device Arabic voice (conversation, reading) | Depends on voices installed on each device | The app says so when no Arabic voice exists |
-| Installation prompt on Android and Windows | Needs the hosted HTTPS site | Install from the browser menu after deployment |
+| Installing on Android and Windows | The live site serves its manifest and an active service worker; the install step itself has not been done | Install from the browser menu on each device |
 
 Everything else listed in the README was exercised by the automated tests: 57 logic tests and 55 browser checks at desktop, tablet and phone sizes, including storage across reloads and real offline loading.
 

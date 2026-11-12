@@ -59,7 +59,12 @@ export function playAudio(url: string, opts: { rate?: number; fallback?: string 
       a.onended = () => { if (my === token) { emit({ playing: false, url: null }); done(true); } };
       a.onerror = () => { if (my !== token) return; if (!isFallback && opts.fallback) start(opts.fallback, true); else { emit({ playing: false, url: null, error: navigator.onLine ? 'This recording could not be loaded.' : 'Audio needs a connection unless it was saved for offline use.' }); done(false); } };
       emit({ url, playing: true, error: null });
-      a.play().catch(() => a.onerror?.(new Event('error')));
+      a.play().catch((e) => {
+        if (my !== token || e?.name === 'AbortError') return;
+        // Browsers block sound until the page has been touched; that is not a loading failure.
+        if (e?.name === 'NotAllowedError') { emit({ playing: false, url: null, error: 'Tap play to start the audio. The browser blocks sound until you touch the page.' }); done(false); }
+        else a.onerror?.(new Event('error'));
+      });
     };
     start(url, false);
   });
