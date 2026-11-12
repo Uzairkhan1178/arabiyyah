@@ -1,0 +1,34 @@
+{
+  "name": "arabiyyah",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "data": "echo 'see docs/CONTENT-GUIDE.md for the build_data.py command'"
+  },
+  "dependencies": {
+    "@fontsource-variable/newsreader": "^5.0.0",
+    "@fontsource/amiri-quran": "^5.0.0",
+    "@fontsource/noto-naskh-arabic": "^5.0.0",
+    "@fontsource/noto-nastaliq-urdu": "^5.0.0",
+    "idb": "^8.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-fsrs": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "fake-indexeddb": "^6.0.0",
+    "puppeteer-core": "^23.0.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vite-plugin-pwa": "^0.20.5",
+    "vitest": "^2.0.5"
+  }
+}
