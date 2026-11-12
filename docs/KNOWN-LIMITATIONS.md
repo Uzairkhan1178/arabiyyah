@@ -8,7 +8,7 @@ Live site: https://uzairkhan1178.github.io/arabiyyah/ (deployed 12 Nov 2026).
 |---|---|---|
 | Recitation playback on Android | Verified on the live site in desktop Chrome only (ayah 67:1 played in the Lab; one sample from each of the six reciters and the word audio loaded) | Play an ayah in the Lab and a word in the inspector on the tablet and phone |
 | Playing saved audio with no connection | Saving works on the live site (Al-Ikhlāṣ, four recordings stored and readable; offline copies come from EveryAyah because the streaming host refuses downloads). Playing them back in flight mode has not been tried | Settings → Offline → save one short surah, then play it in flight mode |
-| Sync against the real cloud database | The merge engine passes 12 tests with two simulated devices, and the live database refuses anyone who is not signed in. An actual sign-in and round trip needs an account, which only you can create | Create the account in Settings, study a little, sign in on a second device and check the progress arrives |
+| Sync download on a second device | Upload is confirmed: after the first sign-in the cloud held that device's profile and settings. The merge engine passes 12 tests with two simulated devices, and the database refuses anyone not signed in. Receiving progress on a second real device has not been observed yet | Sign in on a second device and check the name and progress arrive |
 | AI tutor | Needs a personal API key; not called during testing | Add a key in Settings, ask one question in a lesson |
 | Device Arabic voice (conversation, reading) | Depends on voices installed on each device | The app says so when no Arabic voice exists |
 | Installing on Android and Windows | The live site serves its manifest and an active service worker; the install step itself has not been done | Install from the browser menu on each device |
@@ -28,7 +28,7 @@ Everything else listed in the README was exercised by the automated tests: 75 lo
 
 ## To tidy in Firebase
 
-- **Sign-ups are open.** Anyone who finds the site could create an account (they could reach only their own empty space, never your data). After you have created your account, switch off new sign-ups: Firebase console → Authentication → Settings → User actions → untick *Enable create (sign-up)*.
+- **Sign-ups are closed** (12 Nov 2026), now that the one account exists. Signing in on a new device still works. To add another person, re-tick *Enable create (sign-up)* under Firebase console → Authentication → Settings → User actions.
 - **A Google Analytics property was attached** when the project was created. The app does not load Analytics and sends it nothing. It can be removed under Project settings → Integrations.
 - Same-item edits on two devices before either syncs: the later edit wins and the earlier one is lost. For flashcard reviews this is rare and harmless.
 
